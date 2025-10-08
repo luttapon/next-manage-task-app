@@ -44,6 +44,42 @@ export default function Page() {
     fetchTasks();
   }, []);
 
+  // ฟังก์ชันลบงาน
+  async function handleDelete(id: number, image_url: string) {
+if (confirm("คุณต้องการลบงานนี้ใช่หรือไม่?")) {
+  // ลบรูปภาพจาก Supabase Storage ถ้ามี
+  if (image_url != "" ) {
+    const image_name = image_url.split("/").pop() as string;
+    const { data, error } = await supabase.storage
+      .from("task_bk")
+      .remove([image_name]);
+
+    if (error) {
+      alert("พบข้อผิดพลาดในการลบรูปภาพ:");
+      console.log(error.message);
+      return;
+      }
+  }
+  // ลบงานจากฐานข้อมูล
+  const { data ,error } = await supabase
+    .from("task_tb")
+    .delete()
+    .eq("id", id);
+
+  // ตรวจสอบข้อผิดพลาดและแจ้งเตือนผู้ใช้
+  if (error) {
+    alert("พบข้อผิดพลาดในการลบงาน:");
+    console.log(error.message);
+    return;
+  }
+
+
+  // ลบข้อมูลออกจากรายการที่แสดงผล
+  setTasks(tasks.filter((task) => task.id !== id));
+  }
+}
+  
+
   return (
     <div className="flex flex-col w-3/4 mx-auto">
       <div className="flex flex-col items-center mt-20 gap-4">
@@ -109,8 +145,8 @@ export default function Page() {
                 </td>
                 <td className="border border-black p-2">
                   {" "}
-                  <Link href={`/edittask/${task.id}`}> แก้ไข</Link>{" "}
-                  <button>ลบ</button>
+                  <Link href={`/edittask/${task.id}`} className="text-green-600"> แก้ไข</Link>{" | "}
+                  <button className="text-red-600 font-bold cursor-pointer " onClick={() => handleDelete(task.id, task.image_url)}>ลบ</button>
                 </td>
               </tr>
             ))}
